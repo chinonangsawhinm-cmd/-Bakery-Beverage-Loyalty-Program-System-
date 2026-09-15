@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <?!= include('Style'); ?>
+</head>
+<body>
+
+<header>
+ <div class="container">
+  <nav>
+    <a class="brand" onclick="go('home')">
+      <div class="brand-mark">🥐</div>
+      <div><b>SAM BAKERY</b><span>FRESH EVERY DAY</span></div>
+    </a>
+    <div class="nav-right">
+      <span class="nav-link" onclick="go('menu')">เมนู</span>
+      <span class="nav-link" onclick="go('points')">สะสมแต้ม</span>
+      <span class="nav-link" onclick="openHistory()">คำสั่งซื้อ</span>
+      <div id="authArea"></div>
+      <button class="cart-btn" onclick="openCart()">🛒 ตะกร้า
+        <span class="badge" id="cartBadge">0</span></button>
+    </div>
+  </nav>
+ </div>
+</header>
+
+<div class="hero" id="home">
+ <div class="container">
+   <p class="tag">SAM BAKERY • SINCE 2018</p>
+   <h1>ความอบอุ่นที่อบสดใหม่ทุกเช้า</h1>
+   <p>ครัวซองต์เนยฝรั่งเศส เค้กโฮมเมด และกาแฟคั่วเอง — สั่งออนไลน์ สะสมแต้ม รับส่วนลดทันที</p>
+   <button class="btn btn-gold" onclick="go('menu')">🍰 สั่งเลย</button>
+   <button class="btn btn-ghost hero-ghost" onclick="go('points')">ดูสิทธิ์สะสมแต้ม</button>
+ </div>
+</div>
+
+<section id="menu">
+ <div class="container">
+  <div class="sec-title"><h2>เมนูของเรา</h2><p>ทุกชิ้นอบสดใหม่ตั้งแต่ตี 5 ทุกวัน</p></div>
+  <div class="tabs">
+    <button class="tab active" onclick="filterCat('all',this)">ทั้งหมด</button>
+    <button class="tab" onclick="filterCat('bread',this)">🥐 ขนมปัง</button>
+    <button class="tab" onclick="filterCat('cake',this)">🍰 เค้ก</button>
+    <button class="tab" onclick="filterCat('cookie',this)">🍪 คุกกี้</button>
+    <button class="tab" onclick="filterCat('drink',this)">☕ เครื่องดื่ม</button>
+  </div>
+  <div class="menu-grid" id="menuGrid">
+    <div class="loading">กำลังโหลดเมนู...</div>
+  </div>
+ </div>
+</section>
+
+<section id="points" class="bg-soft">
+ <div class="container">
+  <div class="sec-title"><h2>สะสมแต้ม แลกส่วนลด</h2>
+    <p>ทุกการใช้จ่าย 20 บาท = 1 แต้ม • แต้มไม่มีวันหมดอายุ</p></div>
+  <div class="points-box">
+    <div class="pt-left">
+      <div class="pt-cap">แต้มสะสมของคุณ</div>
+      <div class="pt-num" id="ptNum">0</div>
+      <div class="pt-cap">POINTS</div>
+      <div class="pt-bar"><div class="pt-fill" id="ptFill"></div></div>
+      <div class="pt-hint" id="ptHint">ล็อกอินเพื่อเริ่มสะสมแต้ม</div>
+    </div>
+    <div>
+      <h3 class="rw-title">🎁 แลกของรางวัล</h3>
+      <div class="rewards" id="rewardList"></div>
+    </div>
+  </div>
+ </div>
+</section>
+
+<section>
+ <div class="container">
+  <div class="sec-title"><h2>ทำไมต้อง Sam Bakery</h2></div>
+  <div class="menu-grid">
+    <div class="item feat"><div class="fi">🌾</div><h4>วัตถุดิบพรีเมียม</h4>
+      <p class="desc">แป้งฝรั่งเศส เนยแท้ 100% ไม่ใส่วัตถุกันเสีย</p></div>
+    <div class="item feat"><div class="fi">👨‍🍳</div><h4>เชฟมืออาชีพ</h4>
+      <p class="desc">ทีมเชฟผ่านการอบรมเบเกอรี่ระดับสากล</p></div>
+    <div class="item feat"><div class="fi">🚚</div><h4>ส่งไวใน 60 นาที</h4>
+      <p class="desc">สั่งก่อน 16.00 น. รับของวันเดียวกัน</p></div>
+    <div class="item feat"><div class="fi">💳</div><h4>จ่ายง่ายด้วย QR</h4>
+      <p class="desc">สแกนจ่ายผ่านทุกแอปธนาคาร ปลอดภัย 100%</p></div>
+  </div>
+ </div>
+</section>
+
+<footer>
+ <div class="container">
+  <div class="f-grid">
+    <div><h4>🥐 SAM BAKERY</h4>
+      <p>ร้านเบเกอรี่โฮมเมด อบสดใหม่ทุกวัน</p><p>ด้วยใจรักตั้งแต่ปี 2018</p></div>
+    <div><h4>ติดต่อเรา</h4>
+      <p>📍 88/8 ถ.นิมมานเหมินท์ อ.เมือง เชียงใหม่</p>
+      <p>📞 052-123-456</p><p>✉️ hello@sambakery.co</p></div>
+    <div><h4>เวลาทำการ</h4>
+      <p>จันทร์ – ศุกร์ 07.00 – 19.00 น.</p><p>เสาร์ – อาทิตย์ 08.00 – 20.00 น.</p></div>
+  </div>
+  <div class="copy">© 2026 Sam Bakery • Powered by Google Apps Script</div>
+ </div>
+</footer>
+
+<div id="modalRoot"></div>
+<div id="drawerRoot"></div>
+
+<?!= include('Script'); ?>
+</body>
+</html>

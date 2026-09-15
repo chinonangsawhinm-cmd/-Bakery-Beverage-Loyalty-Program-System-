@@ -1,0 +1,298 @@
+<script>
+/* ================= STATE ================= */
+var MENU = [], REWARDS = [], CFG = { ptRate:20, delivery:30, promptpay:'' };
+var cart = [], user = null, coupon = null, curCat = 'all', timerId = null, pendingRef = null;
+
+/* ================= SERVER BRIDGE ================= */
+function call(fn, arg) {
+  return new Promise(function (resolve, reject) {
+    google.script.run
+      .withSuccessHandler(resolve)
+      .withFailureHandler(function (e) { reject(e); toast('⚠️ ' + e.message); })
+      [fn](arg);
+  });
+}
+var baht = function (n) { return '฿' + Number(n).toLocaleString('th-TH'); };
+
+/* ================= INIT ================= */
+window.addEventListener('load', function () {
+  Promise.all([call('getMenu'), call('getRewards'), call('getConfig')])
+    .then(function (r) {
+      MENU = r[0]; REWARDS = r[1]; CFG = r[2];
+      renderMenu(); renderPoints();
+      var saved = localStorage.getItem('sb_email');
+      if (saved) return call('getProfile', saved);
+    })
+    .then(function (res) {
+      if (res && res.ok) { user = res.user; }
+      refresh();
+    });
+});
+
+/* ================= RENDER ================= */
+function renderMenu() {
+  var list = curCat === 'all' ? MENU : MENU.filter(function (m) { return m.c === curCat; });
+  document.getElementById('menuGrid').innerHTML = list.map(function (m) {
+    return '<div class="item">' +
+      '<div class="item-img" style="background-image:url(\'' + m.img + '\')">' +
+      (m.hot ? '<span class="hot">🔥 ขายดี</span>' : '') + '</div>' +
+      '<div class="item-body"><h4>' + m.n + '</h4><p class="desc">' + m.d + '</p>' +
+      '<div class="item-foot"><span class="price">' + baht(m.p) + '</span>' +
+      '<button class="add" onclick="addCart(' + m.id + ')">+</button></div></div></div>';
+  }).join('');
+}
+function filterCat(c, el) {
+  curCat = c;
+  var tabs = document.querySelectorAll('.tab');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+  el.classList.add('active');
+  renderMenu();
+}
+function renderAuth() {
+  document.getElementById('authArea').innerHTML = user
+    ? '<div class="user-chip" onclick="openProfile()"><div class="avatar">' +
+      user.name.charAt(0).toUpperCase() + '</div><div>' +
+      '<div style="font-size:13px;line-height:1.2">' + user.name + '</div>' +
+      '<div style="font-size:10.5px;opacity:.7">⭐ ' + user.points + ' แต้ม</div></div></div>'
+    : '<button class="btn btn-gold" style="padding:9px 20px;font-size:14px" onclick="openAuth(\'login\')">เข้าสู่ระบบ</button>';
+}
+function renderPoints() {
+  var p = user ? user.points : 0;
+  document.getElementById('ptNum').textContent = p;
+  var next = null;
+  for (var i = 0; i < REWARDS.length; i++) if (REWARDS[i].pt > p) { next = REWARDS[i]; break; }
+  document.getElementById('ptFill').style.width = (next ? Math.min(100, p / next.pt * 100) : 100) + '%';
+  document.getElementById('ptHint').textContent = !user ? 'ล็อกอินเพื่อเริ่มสะสมแต้ม'
+    : next ? 'อีก ' + (next.pt - p) + ' แต้ม → ' + next.label : '🎉 ปลดล็อกทุกรางวัลแล้ว!';
+  document.getElementById('rewardList').innerHTML = REWARDS.map(function (r) {
+    var ok = user && user.points >= r.pt, used = coupon && coupon.pt === r.pt;
+    return '<div class="reward ' + (ok ? 'ok' : '') + '"><div><b>' + r.label +
+      '</b><small>ใช้ ' + r.pt + ' แต้ม</small></div>' +
+      '<button class="rd-btn" ' + (ok && !used ? '' : 'disabled') + ' onclick="useCoupon(' + r.pt + ')">' +
+      (used ? '✓ เลือกแล้ว' : ok ? 'แลกเลย' : '🔒 ล็อก') + '</button></div>';
+  }).join('');
+}
+function renderBadge() {
+  var n = cart.reduce(function (s, i) { return s + i.q; }, 0);
+  var b = document.getElementById('cartBadge');
+  b.textContent = n; b.style.display = n ? 'grid' : 'none';
+}
+function refresh() { renderAuth(); renderPoints(); renderBadge(); }
+
+/* ================= CART ================= */
+function addCart(id) {
+  var it = cart.filter(function (c) { return c.id === id; })[0];
+  if (it) it.q++;
+  else {
+    var m = MENU.filter(function (x) { return x.id === id; })[0];
+    cart.push({ id: m.id, n: m.n, p: m.p, img: m.img, q: 1 });
+  }
+  refresh(); toast('เพิ่มลงตะกร้าแล้ว 🛒');
+}
+function chQty(id, d) {
+  var it = cart.filter(function (c) { return c.id === id; })[0];
+  if (!it) return;
+  it.q += d;
+  if (it.q <= 0) cart = cart.filter(function (c) { return c.id !== id; });
+  refresh();
+  if (document.querySelector('.drawer')) openCart();
+}
+function subTotal() { return cart.reduce(function (s, i) { return s + i.p * i.q; }, 0); }
+function totals() {
+  var sub = subTotal();
+  var disc = coupon ? Math.min(coupon.val, sub) : 0;
+  var ship = cart.length ? CFG.delivery : 0;
+  return { sub: sub, disc: disc, ship: ship, net: Math.max(0, sub - disc) + ship };
+}
+function useCoupon(pt) {
+  if (!user) return openAuth('login');
+  var r = REWARDS.filter(function (x) { return x.pt === pt; })[0];
+  coupon = (coupon && coupon.pt === pt) ? null : r;
+  refresh(); toast(coupon ? 'เลือก ' + r.label + ' แล้ว' : 'ยกเลิกคูปองแล้ว');
+}
+
+function openCart() {
+  var t = totals();
+  document.getElementById('drawerRoot').innerHTML =
+   '<div class="overlay" onclick="if(event.target===this)closeAll()">' +
+   '<div class="drawer" style="margin-left:auto" onclick="event.stopPropagation()">' +
+   '<div class="drawer-head"><h3>🛒 ตะกร้าของฉัน</h3>' +
+   '<button class="close" onclick="closeAll()">×</button></div>' +
+   '<div class="drawer-body">' +
+   (cart.length ? cart.map(function (i) {
+     return '<div class="line"><div class="line-img" style="background-image:url(\'' + i.img + '\')"></div>' +
+       '<div class="line-info"><b>' + i.n + '</b><small>' + baht(i.p) + ' / ชิ้น</small>' +
+       '<div class="qty"><button onclick="chQty(' + i.id + ',-1)">−</button><span>' + i.q +
+       '</span><button onclick="chQty(' + i.id + ',1)">+</button></div></div>' +
+       '<div class="line-sum">' + baht(i.p * i.q) + '</div></div>';
+   }).join('')
+   : '<div class="empty"><div>🥐</div>ตะกร้ายังว่างอยู่<br><small>เลือกขนมอร่อยๆ กันเลย</small></div>') +
+   '</div><div class="drawer-foot">' +
+   '<div class="sum-row"><span>ยอดรวมสินค้า</span><b>' + baht(t.sub) + '</b></div>' +
+   (t.disc ? '<div class="sum-row disc"><span>ส่วนลดคูปอง (' + coupon.pt + ' แต้ม)</span><b>−' + baht(t.disc) + '</b></div>' : '') +
+   '<div class="sum-row"><span>ค่าจัดส่ง</span><b>' + (t.ship ? baht(t.ship) : '—') + '</b></div>' +
+   '<div class="sum-row total"><span>ยอดชำระ</span><span>' + baht(t.net) + '</span></div>' +
+   '<button class="btn btn-primary btn-block" style="margin-top:14px" ' +
+   (cart.length ? '' : 'disabled') + ' onclick="checkout(this)">ยืนยันสั่งซื้อ →</button>' +
+   '</div></div></div>';
+}
+
+/* ================= AUTH ================= */
+function openAuth(mode, msg) {
+  var login = mode === 'login';
+  document.getElementById('modalRoot').innerHTML =
+   '<div class="overlay" onclick="if(event.target===this)closeAll()"><div class="modal">' +
+   '<button class="close" onclick="closeAll()">×</button>' +
+   '<h3>' + (login ? 'ยินดีต้อนรับกลับ 👋' : 'สมัครสมาชิกใหม่ 🎉') + '</h3>' +
+   '<p class="sub">' + (login ? 'เข้าสู่ระบบเพื่อสะสมแต้มและสั่งซื้อ' : 'รับทันที 20 แต้มต้อนรับสมาชิกใหม่') + '</p>' +
+   (msg ? '<div class="err">' + msg + '</div>' : '') +
+   (login ? '' : '<div class="field"><label>ชื่อ-นามสกุล</label><input id="fName" placeholder="สมชาย ใจดี"></div>') +
+   '<div class="field"><label>อีเมล</label><input id="fMail" type="email" placeholder="you@email.com"></div>' +
+   (login ? '' : '<div class="field"><label>เบอร์โทรศัพท์</label><input id="fTel" placeholder="08x-xxx-xxxx"></div>') +
+   '<div class="field"><label>รหัสผ่าน</label><input id="fPass" type="password" placeholder="อย่างน้อย 6 ตัวอักษร"></div>' +
+   '<button class="btn btn-primary btn-block" style="margin-top:8px" onclick="' +
+   (login ? 'doLogin(this)' : 'doRegister(this)') + '">' + (login ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก') + '</button>' +
+   '<p class="switch">' + (login
+     ? 'ยังไม่มีบัญชี? <b onclick="openAuth(\'register\')">สมัครเลย</b>'
+     : 'มีบัญชีแล้ว? <b onclick="openAuth(\'login\')">เข้าสู่ระบบ</b>') + '</p></div></div>';
+}
+function busy(btn, txt) { btn.disabled = true; btn.dataset.old = btn.textContent; btn.textContent = txt; }
+function free(btn) { btn.disabled = false; btn.textContent = btn.dataset.old; }
+
+function doRegister(btn) {
+  busy(btn, 'กำลังสมัคร...');
+  call('registerUser', {
+    name: fName.value, email: fMail.value, tel: fTel.value, pass: fPass.value
+  }).then(function (r) {
+    if (!r.ok) { free(btn); return openAuth('register', r.msg); }
+    user = r.user; localStorage.setItem('sb_email', user.email);
+    closeAll(); refresh(); toast(r.msg);
+  });
+}
+function doLogin(btn) {
+  busy(btn, 'กำลังเข้าสู่ระบบ...');
+  call('loginUser', { email: fMail.value, pass: fPass.value }).then(function (r) {
+    if (!r.ok) { free(btn); return openAuth('login', r.msg); }
+    user = r.user; localStorage.setItem('sb_email', user.email);
+    closeAll(); refresh(); toast('สวัสดี ' + user.name + ' 👋');
+  });
+}
+function logout() {
+  user = null; coupon = null; localStorage.removeItem('sb_email');
+  closeAll(); refresh(); toast('ออกจากระบบแล้ว');
+}
+function openProfile() {
+  document.getElementById('modalRoot').innerHTML =
+   '<div class="overlay" onclick="if(event.target===this)closeAll()">' +
+   '<div class="modal pay-wrap"><button class="close" onclick="closeAll()">×</button>' +
+   '<div class="avatar" style="width:70px;height:70px;font-size:30px;margin:6px auto 14px">' +
+   user.name.charAt(0).toUpperCase() + '</div><h3>' + user.name + '</h3>' +
+   '<p class="sub">' + user.email + ' • ' + user.tel + '</p>' +
+   '<div class="gain">แต้มสะสมทั้งหมด<br><b>⭐ ' + user.points + ' แต้ม</b></div>' +
+   '<button class="btn btn-primary btn-block" style="margin-bottom:10px" onclick="openHistory()">📦 ประวัติคำสั่งซื้อ</button>' +
+   '<button class="btn btn-ghost btn-block" onclick="logout()">ออกจากระบบ</button></div></div>';
+}
+function openHistory() {
+  if (!user) return openAuth('login');
+  document.getElementById('modalRoot').innerHTML =
+   '<div class="overlay" onclick="if(event.target===this)closeAll()"><div class="modal wide">' +
+   '<button class="close" onclick="closeAll()">×</button><h3>📦 ประวัติคำสั่งซื้อ</h3>' +
+   '<div class="spin"></div></div></div>';
+  call('getOrders', user.email).then(function (o) {
+    var m = document.querySelector('.modal.wide');
+    if (!m) return;
+    m.innerHTML = '<button class="close" onclick="closeAll()">×</button>' +
+      '<h3>📦 ประวัติคำสั่งซื้อ</h3><p class="sub">ทั้งหมด ' + o.length + ' ออร์เดอร์</p>' +
+      (o.length ? o.map(function (x) {
+        var paid = x.status === 'PAID';
+        return '<div class="hist"><div class="hist-top"><span>#' + x.ref + '</span>' +
+          '<span class="status ' + (paid ? '' : 'pending') + '">' +
+          (paid ? '✓ ชำระแล้ว' : '⏳ รอชำระ') + '</span></div><b>' + baht(x.net) + '</b>' +
+          '<p>' + x.detail + '</p><p>' + x.date + ' • ได้รับ ' + x.gain + ' แต้ม</p></div>';
+      }).join('') : '<div class="empty"><div>📭</div>ยังไม่มีคำสั่งซื้อ</div>');
+  });
+}
+
+/* ================= CHECKOUT + QR ================= */
+function checkout(btn) {
+  if (!user) { closeAll(); return openAuth('login', 'กรุณาเข้าสู่ระบบก่อนสั่งซื้อ'); }
+  busy(btn, 'กำลังสร้างออร์เดอร์...');
+  call('createOrder', {
+    email: user.email,
+    items: cart.map(function (c) { return { id: c.id, q: c.q }; }),
+    couponPt: coupon ? coupon.pt : 0
+  }).then(function (r) {
+    if (!r.ok) { free(btn); return toast(r.msg); }
+    pendingRef = r.ref;
+    document.getElementById('drawerRoot').innerHTML = '';
+    showQR(r);
+  });
+}
+function showQR(r) {
+  var payload = encodeURIComponent('PromptPay|' + CFG.promptpay + '|' + r.net + '.00|REF:' + r.ref + '|SAMBAKERY');
+  document.getElementById('modalRoot').innerHTML =
+   '<div class="overlay"><div class="modal pay-wrap">' +
+   '<button class="close" onclick="cancelPay()">×</button>' +
+   '<h3>สแกนเพื่อชำระเงิน</h3><p class="sub">รองรับทุกแอปธนาคารและ True Money</p>' +
+   '<div class="qr-card"><div class="promptpay">THAI QR PAYMENT</div>' +
+   '<img src="https://api.qrserver.com/v1/create-qr-code/?size=230x230&margin=0&data=' + payload + '"></div>' +
+   '<div class="order-ref">เลขที่คำสั่งซื้อ <b>#' + r.ref + '</b></div>' +
+   '<div>ยอดชำระ</div><div class="pay-amt">' + baht(r.net) + '</div>' +
+   '<div class="timer">⏱ เหลือเวลา <b id="clock">05:00</b></div>' +
+   '<button class="btn btn-primary btn-block" onclick="paid(this)">✓ ฉันชำระเงินแล้ว</button>' +
+   '<button class="btn btn-ghost btn-block" style="margin-top:10px" onclick="cancelPay()">ยกเลิก</button>' +
+   '<p class="note">* เดโม่เท่านั้น QR นี้ไม่สามารถใช้ชำระเงินจริงได้</p></div></div>';
+  startTimer(300);
+}
+function startTimer(s) {
+  clearInterval(timerId);
+  timerId = setInterval(function () {
+    s--;
+    var el = document.getElementById('clock');
+    if (!el) return clearInterval(timerId);
+    el.textContent = ('0' + Math.floor(s / 60)).slice(-2) + ':' + ('0' + (s % 60)).slice(-2);
+    if (s <= 0) { clearInterval(timerId); cancelPay(); toast('หมดเวลาชำระเงิน กรุณาสั่งใหม่'); }
+  }, 1000);
+}
+function cancelPay() {
+  clearInterval(timerId);
+  if (pendingRef) { call('cancelOrder', pendingRef); pendingRef = null; }
+  closeAll();
+}
+function paid(btn) {
+  busy(btn, 'กำลังตรวจสอบ...');
+  clearInterval(timerId);
+  call('confirmPayment', pendingRef).then(function (r) {
+    if (!r.ok) { free(btn); return toast(r.msg); }
+    var ref = pendingRef; pendingRef = null;
+    user.points = r.balance; cart = []; coupon = null; refresh();
+    document.getElementById('modalRoot').innerHTML =
+     '<div class="overlay" onclick="if(event.target===this)closeAll()">' +
+     '<div class="modal pay-wrap"><div class="tick">✓</div>' +
+     '<h3>ชำระเงินสำเร็จ!</h3><p class="sub">ออร์เดอร์ #' + ref + ' • ยอด ' + baht(r.net) + '</p>' +
+     '<div class="gain">คุณได้รับแต้มสะสม<br><b>+' + r.gain + ' แต้ม</b>' +
+     '<small>แต้มคงเหลือ ' + r.balance + ' แต้ม</small></div>' +
+     '<p style="font-size:13.5px;color:var(--grey)">🚚 ขนมของคุณกำลังจะออกจากเตา ถึงภายใน 60 นาที</p>' +
+     '<button class="btn btn-gold btn-block" style="margin-top:18px" onclick="closeAll();go(\'menu\')">สั่งเพิ่มอีก 🥐</button>' +
+     '</div></div>';
+  });
+}
+
+/* ================= UTIL ================= */
+function closeAll() {
+  document.getElementById('modalRoot').innerHTML = '';
+  document.getElementById('drawerRoot').innerHTML = '';
+  clearInterval(timerId);
+}
+function go(id) { closeAll(); document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
+function toast(msg) {
+  var d = document.createElement('div');
+  d.textContent = msg;
+  d.style.cssText = 'position:fixed;bottom:26px;left:50%;transform:translateX(-50%);' +
+    'background:#4a2c1a;color:#fff;padding:12px 26px;border-radius:26px;z-index:2000;' +
+    'font-size:14px;box-shadow:0 8px 26px rgba(0,0,0,.28)';
+  document.body.appendChild(d);
+  setTimeout(function () { d.remove(); }, 2200);
+}
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
+</script>

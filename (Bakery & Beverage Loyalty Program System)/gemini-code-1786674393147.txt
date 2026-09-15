@@ -1,0 +1,32 @@
+erDiagram
+    CUSTOMER ||--o{ TRANSACTION : "ทำรายการ"
+    CUSTOMER {
+        string customer_id PK "รหัสลูกค้า (เบอร์โทร/LINE ID)"
+        string name "ชื่อลูกค้า"
+        int total_points "คะแนนสะสมรวมปัจจุบัน"
+        date point_expiry_date "วันหมดอายุคะแนน (6 เดือน)"
+    }
+    
+    TRANSACTION ||--|{ TRANSACTION_ITEM : "ประกอบด้วย"
+    TRANSACTION {
+        string transaction_id PK "รหัสธุรกรรม (ใบเสร็จ)"
+        string customer_id FK "รหัสลูกค้า"
+        datetime timestamp "วันเวลาที่ซื้อ"
+        decimal total_amount "ยอดเงินรวม"
+        int points_awarded "คะแนนที่ได้รับ"
+    }
+    
+    PRODUCT ||--o{ TRANSACTION_ITEM : "ถูกซื้อใน"
+    PRODUCT {
+        string product_id PK "รหัสสินค้า"
+        string name "ชื่อสินค้า"
+        decimal price "ราคา"
+        int shelf_life_days "อายุการจัดเก็บ"
+        string storage_instructions "วิธีเก็บรักษา"
+    }
+    
+    TRANSACTION_ITEM {
+        string transaction_id FK "รหัสธุรกรรม"
+        string product_id FK "รหัสสินค้า"
+        int quantity "จำนวนที่ซื้อ"
+    }

@@ -1,0 +1,24 @@
+sequenceDiagram
+    autonumber
+    actor Customer as ลูกค้า
+    participant POS as หน้าร้าน (POS)
+    participant Backend as ระบบหลังบ้านหลัก
+    participant DB as ฐานข้อมูล
+    participant Line as LINE OA
+
+    Customer->>POS: สั่งซื้อสินค้า & แจ้งเบอร์โทร/สแกน QR
+    POS->>Backend: ข้อมูลใบเสร็จ (รายการสินค้า, ยอดเงิน, รหัสลูกค้า)
+    Backend->>DB: ดึงข้อมูลสินค้า (เช็คราคา และ Shelf Life)
+    DB-->>Backend: ส่งข้อมูลสินค้ากลับมา
+    Backend->>Backend: คำนวณแต้มตามเกณฑ์
+    Backend->>DB: บันทึกใบเสร็จ และ อัปเดตแต้มลูกค้า
+    DB-->>Backend: ยืนยันการบันทึกสำเร็จ
+    Backend-->>POS: ส่งผลลัพธ์ (แต้มที่ได้รอบนี้, แต้มสะสมรวม)
+    POS-->>Customer: พิมพ์ใบเสร็จ / พนักงานแจ้งแต้ม
+    
+    rect rgb(240, 248, 255)
+    Note over Backend, Line: Background Process (ทำงานอัตโนมัติ)
+    Backend->>Line: ส่งข้อความ: แจ้งแต้มสะสมล่าสุด
+    Backend->>Line: ส่งข้อความ: แนะนำวิธีเก็บรักษาขนมปัง
+    Line-->>Customer: เด้งแจ้งเตือนบนมือถือลูกค้า
+    end
