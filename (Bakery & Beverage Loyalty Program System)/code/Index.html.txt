@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sam Bakery | อบสดใหม่ทุกวัน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+:root{
+  --brown:#4a2c1a; --caramel:#b5651d; --gold:#e8a33d;
+  --cream:#fdf6ec; --soft:#f7e7d3; --grey:#7a6a5d; --green:#2e7d52;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Prompt',sans-serif;background:var(--cream);color:var(--brown);line-height:1.65}
+a{text-decoration:none;color:inherit;cursor:pointer}
+.container{max-width:1150px;margin:0 auto;padding:0 18px}
+.bg-soft{background:var(--soft)}
+.loading{grid-column:1/-1;text-align:center;padding:50px;color:var(--grey)}
+
+header{position:sticky;top:0;z-index:900;background:rgba(74,44,26,.97)}
+nav{display:flex;align-items:center;justify-content:space-between;padding:12px 0;color:#fff}
+.brand{display:flex;align-items:center;gap:11px}
+.brand-mark{width:44px;height:44px;border-radius:14px;background:var(--gold);color:var(--brown);display:grid;place-items:center;font-size:22px}
+.brand b{font-size:18px;display:block;line-height:1.1;letter-spacing:.5px}
+.brand span{font-size:10.5px;opacity:.7;letter-spacing:2px}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-link{font-size:14.5px;padding:8px 12px;border-radius:20px;transition:.2s;cursor:pointer}
+.nav-link:hover{background:rgba(255,255,255,.12)}
+.cart-btn{position:relative;background:var(--gold);color:var(--brown);padding:9px 18px;border-radius:22px;font-weight:500;border:0;cursor:pointer;font-family:inherit;font-size:14px}
+.badge{position:absolute;top:-6px;right:-6px;background:#d64545;color:#fff;font-size:11px;min-width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-weight:600}
+.user-chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.13);padding:6px 14px 6px 6px;border-radius:22px;cursor:pointer;font-size:13.5px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--gold);color:var(--brown);display:grid;place-items:center;font-weight:600;font-size:13px}
+
+.btn{font-family:inherit;font-size:15px;padding:12px 28px;border-radius:30px;border:0;cursor:pointer;font-weight:500;transition:.22s}
+.btn-primary{background:var(--caramel);color:#fff}
+.btn-primary:hover{background:#9c5316;transform:translateY(-2px)}
+.btn-gold{background:var(--gold);color:var(--brown)}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(232,163,61,.4)}
+.btn-ghost{background:transparent;border:2px solid var(--caramel);color:var(--caramel)}
+.btn-ghost:hover{background:var(--caramel);color:#fff}
+.hero-ghost{border-color:#fff;color:#fff;margin-left:8px}
+.btn-block{width:100%;display:block}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+
+.hero{min-height:70vh;display:grid;place-items:center;text-align:center;color:#fff;
+ background:linear-gradient(rgba(74,44,26,.72),rgba(74,44,26,.85)),url('https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1600') center/cover}
+.hero h1{font-size:clamp(30px,5.5vw,54px);font-weight:700;margin-bottom:8px}
+.hero .tag{color:var(--gold);letter-spacing:4px;font-size:13px;margin-bottom:14px}
+.hero p{max-width:560px;margin:0 auto 26px;opacity:.93;font-weight:300}
+
+section{padding:64px 0}
+.sec-title{text-align:center;margin-bottom:38px}
+.sec-title h2{font-size:29px;position:relative;display:inline-block;padding-bottom:12px}
+.sec-title h2::after{content:'';position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:60px;height:4px;background:var(--gold);border-radius:3px}
+.sec-title p{color:var(--grey);margin-top:12px;font-size:14.5px}
+
+.tabs{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:32px}
+.tab{padding:10px 24px;border-radius:26px;background:#fff;border:2px solid var(--soft);cursor:pointer;font-family:inherit;font-size:14.5px;color:var(--grey);transition:.2s}
+.tab.active{background:var(--brown);border-color:var(--brown);color:#fff}
+
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:22px}
+.item{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 4px 16px rgba(74,44,26,.08);transition:.26s;display:flex;flex-direction:column}
+.item:hover{transform:translateY(-7px);box-shadow:0 16px 34px rgba(74,44,26,.16)}
+.item-img{height:165px;background-size:cover;background-position:center;position:relative}
+.hot{position:absolute;top:10px;left:10px;background:#d64545;color:#fff;font-size:11px;padding:4px 11px;border-radius:12px;font-weight:500}
+.item-body{padding:16px;flex:1;display:flex;flex-direction:column}
+.item-body h4{font-size:16.5px;margin-bottom:4px}
+.item-body .desc{font-size:12.5px;color:var(--grey);flex:1;margin-bottom:12px}
+.item-foot{display:flex;align-items:center;justify-content:space-between}
+.price{font-size:19px;font-weight:600;color:var(--caramel)}
+.add{background:var(--brown);color:#fff;border:0;width:38px;height:38px;border-radius:12px;font-size:20px;cursor:pointer;transition:.2s}
+.add:hover{background:var(--caramel);transform:rotate(90deg)}
+.feat{padding:26px;text-align:center}
+.feat .fi{font-size:38px}
+.feat h4{margin:10px 0 6px}
+
+.points-box{background:linear-gradient(135deg,var(--brown),#6b4226);color:#fff;border-radius:22px;padding:34px;display:grid;grid-template-columns:1fr 1.3fr;gap:34px;align-items:center}
+.pt-left{text-align:center}
+.pt-cap{font-size:13px;opacity:.75}
+.pt-num{font-size:52px;font-weight:700;color:var(--gold);line-height:1}
+.pt-bar{height:11px;background:rgba(255,255,255,.2);border-radius:8px;overflow:hidden;margin:14px 0 8px}
+.pt-fill{height:100%;width:0;background:var(--gold);border-radius:8px;transition:.5s}
+.pt-hint{font-size:12px;opacity:.72}
+.rw-title{font-size:19px;margin-bottom:14px}
+.rewards{display:grid;gap:10px}
+.reward{background:rgba(255,255,255,.1);border-radius:14px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.reward.ok{background:rgba(232,163,61,.24);border:1px solid var(--gold)}
+.reward small{display:block;opacity:.72;font-size:11.5px}
+.rd-btn{background:var(--gold);color:var(--brown);border:0;padding:7px 16px;border-radius:16px;font-family:inherit;font-size:12.5px;cursor:pointer;font-weight:500;white-space:nowrap}
+.rd-btn:disabled{background:rgba(255,255,255,.16);color:rgba(255,255,255,.5);cursor:not-allowed}
+
+.overlay{position:fixed;inset:0;background:rgba(40,22,10,.62);z-index:1000;display:grid;place-items:center;padding:18px;overflow-y:auto}
+.modal{background:#fff;border-radius:22px;width:100%;max-width:440px;padding:32px;animation:pop .28s ease;max-height:92vh;overflow-y:auto}
+.modal.wide{max-width:560px}
+@keyframes pop{from{opacity:0;transform:scale(.93) translateY(14px)}to{opacity:1;transform:none}}
+.modal h3{font-size:22px;margin-bottom:6px}
+.modal .sub{color:var(--grey);font-size:13.5px;margin-bottom:22px}
+.close{float:right;background:none;border:0;font-size:26px;color:var(--grey);cursor:pointer;line-height:1}
+.field{margin-bottom:15px}
+.field label{display:block;font-size:13.5px;margin-bottom:6px;font-weight:500}
+.field input{width:100%;padding:12px 15px;border:2px solid var(--soft);border-radius:12px;font-family:inherit;font-size:14.5px;background:var(--cream);transition:.2s}
+.field input:focus{outline:0;border-color:var(--gold);background:#fff}
+.switch{text-align:center;font-size:13.5px;color:var(--grey);margin-top:16px}
+.switch b{color:var(--caramel);cursor:pointer}
+.err{background:#fdecec;color:#b53434;font-size:13px;padding:10px 14px;border-radius:10px;margin-bottom:14px}
+
+.drawer{position:fixed;top:0;right:0;width:400px;max-width:100%;height:100%;background:#fff;z-index:1001;box-shadow:-8px 0 40px rgba(0,0,0,.2);display:flex;flex-direction:column;animation:slide .3s ease}
+@keyframes slide{from{transform:translateX(100%)}to{transform:none}}
+.drawer-head{padding:22px;border-bottom:2px solid var(--soft);display:flex;justify-content:space-between;align-items:center}
+.drawer-head h3{font-size:20px}
+.drawer-body{flex:1;overflow-y:auto;padding:18px 22px}
+.drawer-foot{padding:22px;border-top:2px solid var(--soft);background:var(--cream)}
+.line{display:flex;gap:13px;padding:13px 0;border-bottom:1px solid var(--soft)}
+.line-img{width:62px;height:62px;border-radius:12px;background-size:cover;background-position:center;flex-shrink:0}
+.line-info{flex:1}
+.line-info b{font-size:14.5px;display:block}
+.line-info small{color:var(--grey);font-size:12.5px}
+.line-sum{font-weight:600;color:var(--caramel)}
+.qty{display:flex;align-items:center;gap:9px;margin-top:7px}
+.qty button{width:26px;height:26px;border-radius:8px;border:2px solid var(--soft);background:#fff;cursor:pointer;font-size:15px;color:var(--brown);line-height:1}
+.qty button:hover{border-color:var(--caramel);color:var(--caramel)}
+.qty span{min-width:22px;text-align:center;font-weight:500}
+.sum-row{display:flex;justify-content:space-between;font-size:14.5px;margin-bottom:8px}
+.sum-row.total{font-size:19px;font-weight:600;padding-top:11px;border-top:2px dashed var(--soft)}
+.sum-row.total span:last-child{color:var(--caramel)}
+.sum-row.disc{color:var(--green);font-weight:500}
+.empty{text-align:center;padding:56px 0;color:var(--grey)}
+.empty div{font-size:52px;margin-bottom:12px;opacity:.35}
+
+.pay-wrap{text-align:center}
+.qr-card{background:#fff;border:3px solid var(--soft);border-radius:20px;padding:22px;display:inline-block;margin:6px 0 16px}
+.qr-card img{display:block;width:230px;height:230px}
+.promptpay{background:#003d7a;color:#fff;font-size:12px;letter-spacing:2px;padding:7px 0;border-radius:8px 8px 0 0;margin:-22px -22px 16px;font-weight:600}
+.pay-amt{font-size:36px;font-weight:700;color:var(--caramel)}
+.timer{display:inline-block;background:var(--soft);padding:6px 18px;border-radius:20px;font-size:14px;margin:12px 0 20px}
+.timer b{color:#d64545}
+.order-ref{font-size:13px;color:var(--grey);margin-bottom:4px}
+.note{font-size:11.5px;color:var(--grey);margin-top:14px}
+.tick{width:88px;height:88px;border-radius:50%;background:var(--green);color:#fff;font-size:46px;display:grid;place-items:center;margin:0 auto 18px;animation:pop .4s ease}
+.gain{background:var(--soft);border-radius:14px;padding:15px;margin:18px 0;font-size:14.5px}
+.gain b{color:var(--caramel);font-size:19px}
+.gain small{display:block;font-size:13px;color:var(--grey);margin-top:4px}
+
+.hist{border:2px solid var(--soft);border-radius:14px;padding:15px;margin-bottom:12px;text-align:left}
+.hist-top{display:flex;justify-content:space-between;font-size:13px;color:var(--grey);margin-bottom:6px}
+.hist b{font-size:15px}
+.hist p{font-size:12.5px;color:var(--grey)}
+.status{background:#e3f5ea;color:var(--green);font-size:11.5px;padding:3px 11px;border-radius:12px}
+.status.pending{background:#fff3e0;color:#c47b00}
+
+.spin{width:34px;height:34px;border:4px solid var(--soft);border-top-color:var(--caramel);border-radius:50%;margin:26px auto;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+footer{background:var(--brown);color:#e6d5c4;padding:44px 0 28px;text-align:center;font-size:13.5px}
+.f-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;text-align:left;margin-bottom:26px}
+.f-grid h4{color:#fff;font-size:15.5px;margin-bottom:10px}
+.f-grid p{opacity:.78;font-size:13px;margin-bottom:5px}
+.copy{border-top:1px solid rgba(255,255,255,.14);padding-top:18px;opacity:.65;font-size:12.5px}
+
+@media(max-width:860px){
+  .points-box{grid-template-columns:1fr;padding:26px}
+  .f-grid{grid-template-columns:1fr;text-align:center}
+  .nav-link{display:none}
+}
+  </style>
+</head>
+<body>
+
+<header>
+ <div class="container">
+  <nav>
+    <a class="brand" onclick="go('home')">
+      <div class="brand-mark">🥐</div>
+      <div><b>SAM BAKERY</b><span>FRESH EVERY DAY</span></div>
+    </a>
+    <div class="nav-right">
+      <span class="nav-link" onclick="go('menu')">เมนู</span>
+      <span class="nav-link" onclick="go('points')">สะสมแต้ม</span>
+      <span class="nav-link" onclick="openHistory()">คำสั่งซื้อ</span>
+      <div id="authArea"></div>
+      <button class="cart-btn" onclick="openCart()">🛒 ตะกร้า
+        <span class="badge" id="cartBadge">0</span></button>
+    </div>
+  </nav>
+ </div>
+</header>
+
+<div class="hero" id="home">
+ <div class="container">
+   <p class="tag">SAM BAKERY • SINCE 2018</p>
+   <h1>ความอบอุ่นที่อบสดใหม่ทุกเช้า</h1>
+   <p>ครัวซองต์เนยฝรั่งเศส เค้กโฮมเมด และกาแฟคั่วเอง — สั่งออนไลน์ สะสมแต้ม รับส่วนลดทันที</p>
+   <button class="btn btn-gold" onclick="go('menu')">🍰 สั่งเลย</button>
+   <button class="btn btn-ghost hero-ghost" onclick="go('points')">ดูสิทธิ์สะสมแต้ม</button>
+ </div>
+</div>
+
+<section id="menu">
+ <div class="container">
+  <div class="sec-title"><h2>เมนูของเรา</h2><p>ทุกชิ้นอบสดใหม่ตั้งแต่ตี 5 ทุกวัน</p></div>
+  <div class="tabs">
+    <button class="tab active" onclick="filterCat('all',this)">ทั้งหมด</button>
+    <button class="tab" onclick="filterCat('bread',this)">🥐 ขนมปัง</button>
+    <button class="tab" onclick="filterCat('cake',this)">🍰 เค้ก</button>
+    <button class="tab" onclick="filterCat('cookie',this)">🍪 คุกกี้</button>
+    <button class="tab" onclick="filterCat('drink',this)">☕ เครื่องดื่ม</button>
+  </div>
+  <div class="menu-grid" id="menuGrid">
+    <div class="loading">กำลังโหลดเมนู...</div>
+  </div>
+ </div>
+</section>
+
+<section id="points" class="bg-soft">
+ <div class="container">
+  <div class="sec-title"><h2>สะสมแต้ม แลกส่วนลด</h2>
+    <p>ทุกการใช้จ่าย 20 บาท = 1 แต้ม • แต้มไม่มีวันหมดอายุ</p></div>
+  <div class="points-box">
+    <div class="pt-left">
+      <div class="pt-cap">แต้มสะสมของคุณ</div>
+      <div class="pt-num" id="ptNum">0</div>
+      <div class="pt-cap">POINTS</div>
+      <div class="pt-bar"><div class="pt-fill" id="ptFill"></div></div>
+      <div class="pt-hint" id="ptHint">ล็อกอินเพื่อเริ่มสะสมแต้ม</div>
+    </div>
+    <div>
+      <h3 class="rw-title">🎁 แลกของรางวัล</h3>
+      <div class="rewards" id="rewardList"></div>
+    </div>
+  </div>
+ </div>
+</section>
+
+<section>
+ <div class="container">
+  <div class="sec-title"><h2>ทำไมต้อง Sam Bakery</h2></div>
+  <div class="menu-grid">
+    <div class="item feat"><div class="fi">🌾</div><h4>วัตถุดิบพรีเมียม</h4>
+      <p class="desc">แป้งฝรั่งเศส เนยแท้ 100% ไม่ใส่วัตถุกันเสีย</p></div>
+    <div class="item feat"><div class="fi">👨‍🍳</div><h4>เชฟมืออาชีพ</h4>
+      <p class="desc">ทีมเชฟผ่านการอบรมเบเกอรี่ระดับสากล</p></div>
+    <div class="item feat"><div class="fi">🚚</div><h4>ส่งไวใน 60 นาที</h4>
+      <p class="desc">สั่งก่อน 16.00 น. รับของวันเดียวกัน</p></div>
+    <div class="item feat"><div class="fi">💳</div><h4>จ่ายง่ายด้วย QR</h4>
+      <p class="desc">สแกนจ่ายผ่านทุกแอปธนาคาร ปลอดภัย 100%</p></div>
+  </div>
+ </div>
+</section>
+
+<footer>
+ <div class="container">
+  <div class="f-grid">
+    <div><h4>🥐 SAM BAKERY</h4>
+      <p>ร้านเบเกอรี่โฮมเมด อบสดใหม่ทุกวัน</p><p>ด้วยใจรักตั้งแต่ปี 2018</p></div>
+    <div><h4>ติดต่อเรา</h4>
+      <p>📍 88/8 ถ.นิมมานเหมินท์ อ.เมือง เชียงใหม่</p>
+      <p>📞 052-123-456</p><p>✉️ hello@sambakery.co</p></div>
+    <div><h4>เวลาทำการ</h4>
+      <p>จันทร์ – ศุกร์ 07.00 – 19.00 น.</p><p>เสาร์ – อาทิตย์ 08.00 – 20.00 น.</p></div>
+  </div>
+  <div class="copy">© 2026 Sam Bakery • Powered by Google Apps Script</div>
+ </div>
+</footer>
+
+<div id="modalRoot"></div>
+<div id="drawerRoot"></div>
+
+<script>
+/* ================= STATE ================= */
+var MENU = [], REWARDS = [], CFG = { ptRate:20, delivery:30, promptpay:'' };
+var cart = [], user = null, coupon = null, curCat = 'all', timerId = null, pendingRef = null;
+
+/* ================= SERVER BRIDGE ================= */
+function call(fn, arg) {
+  return new Promise(function (resolve, reject) {
+    google.script.run
+      .withSuccessHandler(resolve)
+      .withFailureHandler(function (e) { reject(e); toast('⚠️ ' + e.message); })
+      [fn](arg);
+  });
+}
+var baht = function (n) { return '฿' + Number(n).toLocaleString('th-TH'); };
+
+/* ================= INIT ================= */
+window.addEventListener('load', function () {
+  Promise.all([call('getMenu'), call('getRewards'), call('getConfig')])
+    .then(function (r) {
+      MENU = r[0]; REWARDS = r[1]; CFG = r[2];
+      renderMenu(); renderPoints();
+      var saved = localStorage.getItem('sb_email');
+      if (saved) return call('getProfile', saved);
+    })
+    .then(function (res) {
+      if (res && res.ok) { user = res.user; }
+      refresh();
+    });
+});
+
+/* ================= RENDER ================= */
+function renderMenu() {
+  var list = curCat === 'all' ? MENU : MENU.filter(function (m) { return m.c === curCat; });
+  document.getElementById('menuGrid').innerHTML = list.map(function (m) {
+    return '<div class="item">' +
+      '<div class="item-img" style="background-image:url(\'' + m.img + '\')">' +
+      (m.hot ? '<span class="hot">🔥 ขายดี</span>' : '') + '</div>' +
+      '<div class="item-body"><h4>' + m.n + '</h4><p class="desc">' + m.d + '</p>' +
+      '<div class="item-foot"><span class="price">' + baht(m.p) + '</span>' +
+      '<button class="add" onclick="addCart(' + m.id + ')">+</button></div></div></div>';
+  }).join('');
+}
+function filterCat(c, el) {
+  curCat = c;
+  var tabs = document.querySelectorAll('.tab');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+  el.classList.add('active');
+  renderMenu();
+}
+function renderAuth() {
+  document.getElementById('authArea').innerHTML = user
+    ? '<div class="user-chip" onclick="openProfile()"><div class="avatar">' +
+      user.name.charAt(0).toUpperCase() + '</div><div>' +
+      '<div style="font-size:13px;line-height:1.2">' + user.name + '</div>' +
+      '<div style="font-size:10.5px;opacity:.7">⭐ ' + user.points + ' แต้ม</div></div></div>'
+    : '<button class="btn btn-gold" style="padding:9px 20px;font-size:14px" onclick="openAuth(\'login\')">เข้าสู่ระบบ</button>';
+}
+function renderPoints() {
+  var p = user ? user.points : 0;
+  document.getElementById('ptNum').textContent = p;
+  var next = null;
+  for (var i = 0; i < REWARDS.length; i++) if (REWARDS[i].pt > p) { next = REWARDS[i]; break; }
+  document.getElementById('ptFill').style.width = (next ? Math.min(100, p / next.pt * 100) : 100) + '%';
+  document.getElementById('ptHint').textContent = !user ? 'ล็อกอินเพื่อเริ่มสะสมแต้ม'
+    : next ? 'อีก ' + (next.pt - p) + ' แต้ม → ' + next.label : '🎉 ปลดล็อกทุกรางวัลแล้ว!';
+  document.getElementById('rewardList').innerHTML = REWARDS.map(function (r) {
+    var ok = user && user.points >= r.pt, used = coupon && coupon.pt === r.pt;
+    return '<div class="reward ' + (ok ? 'ok' : '') + '"><div><b>' + r.label +
+      '</b><small>ใช้ ' + r.pt + ' แต้ม</small></div>' +
+      '<button class="rd-btn" ' + (ok && !used ? '' : 'disabled') + ' onclick="useCoupon(' + r.pt + ')">' +
+      (used ? '✓ เลือกแล้ว' : ok ? 'แลกเลย' : '🔒 ล็อก') + '</button></div>';
+  }).join('');
+}
+function renderBadge() {
+  var n = cart.reduce(function (s, i) { return s + i.q; }, 0);
+  var b = document.getElementById('cartBadge');
+  b.textContent = n; b.style.display = n ? 'grid' : 'none';
+}
+function refresh() { renderAuth(); renderPoints(); renderBadge(); }
+
+/* ================= CART ================= */
+function addCart(id) {
+  var it = cart.filter(function (c) { return c.id === id; })[0];
+  if (it) it.q++;
+  else {
+    var m = MENU.filter(function (x) { return x.id === id; })[0];
+    cart.push({ id: m.id, n: m.n, p: m.p, img: m.img, q: 1 });
+  }
+  refresh(); toast('เพิ่มลงตะกร้าแล้ว 🛒');
+}
+function chQty(id, d) {
+  var it = cart.filter(function (c) { return c.id === id; })[0];
+  if (!it) return;
+  it.q += d;
+  if (it.q <= 0) cart = cart.filter(function (c) { return c.id !== id; });
+  refresh();
+  if (document.querySelector('.drawer')) openCart();
+}
+function subTotal() { return cart.reduce(function (s, i) { return s + i.p * i.q; }, 0); }
+function totals() {
+  var sub = subTotal();
+  var disc = coupon ? Math.min(coupon.val, sub) : 0;
+  var ship = cart.length ? CFG.delivery : 0;
+  return { sub: sub, disc: disc, ship: ship, net: Math.max(0, sub - disc) + ship };
+}
+function useCoupon(pt) {
+  if (!user) return openAuth('login');
+  var r = REWARDS.filter(function (x) { return x.pt === pt; })[0];
+  coupon = (coupon && coupon.pt === pt) ? null : r;
+  refresh(); toast(coupon ? 'เลือก ' + r.label + ' แล้ว' : 'ยกเลิกคูปองแล้ว');
+}
+
+function openCart() {
+  var t = totals();
+  document.getElementById('drawerRoot').innerHTML =
+   '<div class="overlay" onclick="if(event.target===this)closeAll()">' +
+   '<div class="drawer" style="margin-left:auto" onclick="event.stopPropagation()">' +
+   '<div class="drawer-head"><h3>🛒 ตะกร้าของฉัน</h3>' +
+   '<button class="close" onclick="closeAll()">×</button></div>' +
+   '<div class="drawer-body">' +
+   (cart.length ? cart.map(function (i) {
+     return '<div class="line"><div class="line-img" style="background-image:url(\'' + i.img + '\')"></div>' +
+       '<div class="line-info"><b>' + i.n + '</b><small>' + baht(i.p) + ' / ชิ้น</small>' +
+       '<div class="qty"><button onclick="chQty(' + i.id + ',-1)">−</button><span>' + i.q +
+       '</span><button onclick="chQty(' + i.id + ',1)">+</button></div></div>' +
+       '<div class="line-sum">' + baht(i.p * i.q) + '</div></div>';
+   }).join('')
+   : '<div class="empty"><div>🥐</div>ตะกร้ายังว่างอยู่<br><small>เลือกขนมอร่อยๆ กันเลย</small></div>') +
+   '</div><div class="drawer-foot">' +
+   '<div class="sum-row"><span>ยอดรวมสินค้า</span><b>' + baht(t.sub) + '</b></div>' +
+   (t.disc ? '<div class="sum-row disc"><span>ส่วนลดคูปอง (' + coupon.pt + ' แต้ม)</span><b>−' + baht(t.disc) + '</b></div>' : '') +
+   '<div class="sum-row"><span>ค่าจัดส่ง</span><b>' + (t.ship ? baht(t.ship) : '—') + '</b></div>' +
+   '<div class="sum-row total"><span>ยอดชำระ</span><span>' + baht(t.net) + '</span></div>' +
+   '<button class="btn btn-primary btn-block" style="margin-top:14px" ' +
+   (cart.length ? '' : 'disabled') + ' onclick="checkout(this)">ยืนยันสั่งซื้อ →</button>' +
+   '</div></div></div>';
+}
+
+/* ================= AUTH ================= */
+function openAuth(mode, msg) {
+  var login = mode === 'login';
+  document.getElementById('modalRoot').innerHTML =
+   '<div class="overlay" onclick="if(event.target===this)closeAll()"><div class="modal">' +
+   '<button class="close" onclick="closeAll()">×</button>' +
+   '<h3>' + (login ? 'ยินดีต้อนรับกลับ 👋' : 'สมัครสมาชิกใหม่ 🎉') + '</h3>' +
+   '<p class="sub">' + (login ? 'เข้าสู่ระบบเพื่อสะสมแต้มและสั่งซื้อ' : 'รับทันที 20 แต้มต้อนรับสมาชิกใหม่') + '</p>' +
+   (msg ? '<div class="err">' + msg + '</div>' : '') +
+   (login ? '' : '<div class="field"><label>ชื่อ-นามสกุล</label><input id="fName" placeholder="สมชาย ใจดี"></div>') +
+   '<div class="field"><label>อีเมล</label><input id="fMail" type="email" placeholder="you@email.com"></div>' +
+   (login ? '' : '<div class="field"><label>เบอร์โทรศัพท์</label><input id="fTel" placeholder="08x-xxx-xxxx"></div>') +
+   '<div class="field"><label>รหัสผ่าน</label><input id="fPass" type="password" placeholder="อย่างน้อย 6 ตัวอักษร"></div>' +
+   '<button class="btn btn-primary btn-block" style="margin-top:8px" onclick="' +
+   (login ? 'doLogin(this)' : 'doRegister(this)') + '">' + (login ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก') + '</button>' +
+   '<p class="switch">' + (login
+     ? 'ยังไม่มีบัญชี? <b onclick="openAuth(\'register\')">สมัครเลย</b>'
+     : 'มีบัญชีแล้ว? <b onclick="openAuth(\'login\')">เข้าสู่ระบบ</b>') + '</p></div></div>';
+}
+function busy(btn, txt) { btn.disabled = true; btn.dataset.old = btn.textContent; btn.textContent = txt; }
+function free(btn) { btn.disabled = false; btn.textContent = btn.dataset.old; }
+
+function doRegister(btn) {
+  busy(btn, 'กำลังสมัคร...');
+  call('registerUser', {
+    name: fName.value, email: fMail.value, tel: fTel.value, pass: fPass.value
+  }).then(function (r) {
+    if (!r.ok) { free(btn); return openAuth('register', r.msg); }
+    user = r.user; localStorage.setItem('sb_email', user.email);
+    closeAll(); refresh(); toast(r.msg);
+  });
+}
+function doLogin(btn) {
+  busy(btn, 'กำลังเข้าสู่ระบบ...');
+  call('loginUser', { email: fMail.value, pass: fPass.value }).then(function (r) {
+    if (!r.ok) { free(btn); return openAuth('login', r.msg); }
+    user = r.user; localStorage.setItem('sb_email', user.email);
+    closeAll(); refresh(); toast('สวัสดี ' + user.name + ' 👋');
+  });
+}
+function logout() {
+  user = null; coupon = null; localStorage.removeItem('sb_email');
+  closeAll(); refresh(); toast('ออกจากระบบแล้ว');
+}
+function openProfile() {
+  document.getElementById('modalRoot').innerHTML =
+   '<div class="overlay" onclick="if(event.target===this)closeAll()">' +
+   '<div class="modal pay-wrap"><button class="close" onclick="closeAll()">×</button>' +
+   '<div class="avatar" style="width:70px;height:70px;font-size:30px;margin:6px auto 14px">' +
+   user.name.charAt(0).toUpperCase() + '</div><h3>' + user.name + '</h3>' +
+   '<p class="sub">' + user.email + ' • ' + user.tel + '</p>' +
+   '<div class="gain">แต้มสะสมทั้งหมด<br><b>⭐ ' + user.points + ' แต้ม</b></div>' +
+   '<button class="btn btn-primary btn-block" style="margin-bottom:10px" onclick="openHistory()">📦 ประวัติคำสั่งซื้อ</button>' +
+   '<button class="btn btn-ghost btn-block" onclick="logout()">ออกจากระบบ</button></div></div>';
+}
+function openHistory() {
+  if (!user) return openAuth('login');
+  document.getElementById('modalRoot').innerHTML =
+   '<div class="overlay" onclick="if(event.target===this)closeAll()"><div class="modal wide">' +
+   '<button class="close" onclick="closeAll()">×</button><h3>📦 ประวัติคำสั่งซื้อ</h3>' +
+   '<div class="spin"></div></div></div>';
+  call('getOrders', user.email).then(function (o) {
+    var m = document.querySelector('.modal.wide');
+    if (!m) return;
+    m.innerHTML = '<button class="close" onclick="closeAll()">×</button>' +
+      '<h3>📦 ประวัติคำสั่งซื้อ</h3><p class="sub">ทั้งหมด ' + o.length + ' ออร์เดอร์</p>' +
+      (o.length ? o.map(function (x) {
+        var paid = x.status === 'PAID';
+        return '<div class="hist"><div class="hist-top"><span>#' + x.ref + '</span>' +
+          '<span class="status ' + (paid ? '' : 'pending') + '">' +
+          (paid ? '✓ ชำระแล้ว' : '⏳ รอชำระ') + '</span></div><b>' + baht(x.net) + '</b>' +
+          '<p>' + x.detail + '</p><p>' + x.date + ' • ได้รับ ' + x.gain + ' แต้ม</p></div>';
+      }).join('') : '<div class="empty"><div>📭</div>ยังไม่มีคำสั่งซื้อ</div>');
+  });
+}
+
+/* ================= CHECKOUT + QR ================= */
+function checkout(btn) {
+  if (!user) { closeAll(); return openAuth('login', 'กรุณาเข้าสู่ระบบก่อนสั่งซื้อ'); }
+  busy(btn, 'กำลังสร้างออร์เดอร์...');
+  call('createOrder', {
+    email: user.email,
+    items: cart.map(function (c) { return { id: c.id, q: c.q }; }),
+    couponPt: coupon ? coupon.pt : 0
+  }).then(function (r) {
+    if (!r.ok) { free(btn); return toast(r.msg); }
+    pendingRef = r.ref;
+    document.getElementById('drawerRoot').innerHTML = '';
+    showQR(r);
+  });
+}
+function showQR(r) {
+  var payload = encodeURIComponent('PromptPay|' + CFG.promptpay + '|' + r.net + '.00|REF:' + r.ref + '|SAMBAKERY');
+  document.getElementById('modalRoot').innerHTML =
+   '<div class="overlay"><div class="modal pay-wrap">' +
+   '<button class="close" onclick="cancelPay()">×</button>' +
+   '<h3>สแกนเพื่อชำระเงิน</h3><p class="sub">รองรับทุกแอปธนาคารและ True Money</p>' +
+   '<div class="qr-card"><div class="promptpay">THAI QR PAYMENT</div>' +
+   '<img src="https://api.qrserver.com/v1/create-qr-code/?size=230x230&margin=0&data=' + payload + '"></div>' +
+   '<div class="order-ref">เลขที่คำสั่งซื้อ <b>#' + r.ref + '</b></div>' +
+   '<div>ยอดชำระ</div><div class="pay-amt">' + baht(r.net) + '</div>' +
+   '<div class="timer">⏱ เหลือเวลา <b id="clock">05:00</b></div>' +
+   '<button class="btn btn-primary btn-block" onclick="paid(this)">✓ ฉันชำระเงินแล้ว</button>' +
+   '<button class="btn btn-ghost btn-block" style="margin-top:10px" onclick="cancelPay()">ยกเลิก</button>' +
+   '<p class="note">* เดโม่เท่านั้น QR นี้ไม่สามารถใช้ชำระเงินจริงได้</p></div></div>';
+  startTimer(300);
+}
+function startTimer(s) {
+  clearInterval(timerId);
+  timerId = setInterval(function () {
+    s--;
+    var el = document.getElementById('clock');
+    if (!el) return clearInterval(timerId);
+    el.textContent = ('0' + Math.floor(s / 60)).slice(-2) + ':' + ('0' + (s % 60)).slice(-2);
+    if (s <= 0) { clearInterval(timerId); cancelPay(); toast('หมดเวลาชำระเงิน กรุณาสั่งใหม่'); }
+  }, 1000);
+}
+function cancelPay() {
+  clearInterval(timerId);
+  if (pendingRef) { call('cancelOrder', pendingRef); pendingRef = null; }
+  closeAll();
+}
+function paid(btn) {
+  busy(btn, 'กำลังตรวจสอบ...');
+  clearInterval(timerId);
+  call('confirmPayment', pendingRef).then(function (r) {
+    if (!r.ok) { free(btn); return toast(r.msg); }
+    var ref = pendingRef; pendingRef = null;
+    user.points = r.balance; cart = []; coupon = null; refresh();
+    document.getElementById('modalRoot').innerHTML =
+     '<div class="overlay" onclick="if(event.target===this)closeAll()">' +
+     '<div class="modal pay-wrap"><div class="tick">✓</div>' +
+     '<h3>ชำระเงินสำเร็จ!</h3><p class="sub">ออร์เดอร์ #' + ref + ' • ยอด ' + baht(r.net) + '</p>' +
+     '<div class="gain">คุณได้รับแต้มสะสม<br><b>+' + r.gain + ' แต้ม</b>' +
+     '<small>แต้มคงเหลือ ' + r.balance + ' แต้ม</small></div>' +
+     '<p style="font-size:13.5px;color:var(--grey)">🚚 ขนมของคุณกำลังจะออกจากเตา ถึงภายใน 60 นาที</p>' +
+     '<button class="btn btn-gold btn-block" style="margin-top:18px" onclick="closeAll();go(\'menu\')">สั่งเพิ่มอีก 🥐</button>' +
+     '</div></div>';
+  });
+}
+
+/* ================= UTIL ================= */
+function closeAll() {
+  document.getElementById('modalRoot').innerHTML = '';
+  document.getElementById('drawerRoot').innerHTML = '';
+  clearInterval(timerId);
+}
+function go(id) { closeAll(); document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
+function toast(msg) {
+  var d = document.createElement('div');
+  d.textContent = msg;
+  d.style.cssText = 'position:fixed;bottom:26px;left:50%;transform:translateX(-50%);' +
+    'background:#4a2c1a;color:#fff;padding:12px 26px;border-radius:26px;z-index:2000;' +
+    'font-size:14px;box-shadow:0 8px 26px rgba(0,0,0,.28)';
+  document.body.appendChild(d);
+  setTimeout(function () { d.remove(); }, 2200);
+}
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
+</script>
+</body>
+</html>
